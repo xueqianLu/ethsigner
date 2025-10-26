@@ -20,7 +20,8 @@ type KeyManagerConfig struct {
 
 // LocalConfig holds the configuration for the local key manager.
 type LocalConfig struct {
-	KeyDir string `mapstructure:"key_dir"`
+	KeyDir   string `mapstructure:"key_dir"`
+	Password string `mapstructure:"password"`
 }
 
 // ServerConfig holds the server configuration.

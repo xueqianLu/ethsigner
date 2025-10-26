@@ -11,6 +11,8 @@ key_manager:
     # Directory to store local key files.
     # This is used only when key_manager.type is "local".
     key_dir: "./keys"
+    # Password for encrypting/decrypting local keys
+    password: ""
 
   vault:
     # Vault server address.
