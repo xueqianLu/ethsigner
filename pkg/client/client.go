@@ -8,12 +8,46 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/xueqianLu/ethsigner/internal/handler"
 )
+
+// CreateAccountResponse represents the response for a new account creation.
+type CreateAccountResponse struct {
+	Address string `json:"address"`
+}
+
+// SignTxRequest represents the request to sign a transaction.
+type SignTxRequest struct {
+	From      string   `json:"from"`
+	To        string   `json:"to"`
+	Nonce     uint64   `json:"nonce"`
+	Value     *big.Int `json:"value"`
+	Data      []byte   `json:"data"`
+	GasLimit  uint64   `json:"gasLimit"`
+	GasPrice  *big.Int `json:"gasPrice,omitempty"`  // Legacy
+	GasFeeCap *big.Int `json:"gasFeeCap,omitempty"` // EIP-1559
+	GasTipCap *big.Int `json:"gasTipCap,omitempty"` // EIP-1559
+	ChainID   string   `json:"chainId"`
+}
+
+// SignTxResponse represents the response for a signed transaction.
+type SignTxResponse struct {
+	RawTx string `json:"rawTx"`
+}
+
+// SignMessageRequest represents the request to sign a message.
+type SignMessageRequest struct {
+	From    string `json:"from"`
+	Message string `json:"message"`
+}
+
+// SignMessageResponse represents the response for a signed message.
+type SignMessageResponse struct {
+	Signature string `json:"signature"`
+}
 
 const (
 	apiKeyHeader    = "X-API-Key"
@@ -69,8 +103,8 @@ func (c *Client) GetAccounts() ([]string, error) {
 }
 
 // CreateAccount requests the creation of a new account in the signer.
-func (c *Client) CreateAccount() (*handler.CreateAccountResponse, error) {
-	var resp handler.CreateAccountResponse
+func (c *Client) CreateAccount() (*CreateAccountResponse, error) {
+	var resp CreateAccountResponse
 	err := c.doRequest(http.MethodPost, "/create-account", nil, &resp)
 	if err != nil {
 		return nil, err
@@ -79,8 +113,8 @@ func (c *Client) CreateAccount() (*handler.CreateAccountResponse, error) {
 }
 
 // SignTransaction sends a transaction to the signer service to be signed.
-func (c *Client) SignTransaction(req handler.SignTxRequest) (*handler.SignTxResponse, error) {
-	var resp handler.SignTxResponse
+func (c *Client) SignTransaction(req SignTxRequest) (*SignTxResponse, error) {
+	var resp SignTxResponse
 	err := c.doRequest(http.MethodPost, "/sign-transaction", req, &resp)
 	if err != nil {
 		return nil, err
@@ -89,8 +123,8 @@ func (c *Client) SignTransaction(req handler.SignTxRequest) (*handler.SignTxResp
 }
 
 // SignMessage sends a message to the signer service to be signed.
-func (c *Client) SignMessage(req handler.SignMessageRequest) (*handler.SignMessageResponse, error) {
-	var resp handler.SignMessageResponse
+func (c *Client) SignMessage(req SignMessageRequest) (*SignMessageResponse, error) {
+	var resp SignMessageResponse
 	err := c.doRequest(http.MethodPost, "/sign-message", req, &resp)
 	if err != nil {
 		return nil, err
