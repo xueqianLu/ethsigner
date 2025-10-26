@@ -23,13 +23,14 @@ services:
       dockerfile: Dockerfile
     container_name: signer
     ports:
-      - "8080:8080"
+      - "2818:2818"
     depends_on:
       - vault
     volumes:
       # Mount the config file into the container.
       # The service will use this file for its configuration.
       - ./config.yaml:/app/config.yaml:ro
+      - ./data/signer/keys:/app/keys
     environment:
       # Override the Vault address in the config file.
       # Inside the Docker network, the 'signer' service can reach the 'vault'

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"math/big"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -31,37 +32,53 @@ func (h *SignTxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
 
-	from := common.HexToAddress(req.From)
-	to := common.HexToAddress(req.To)
+	// Convert address strings to common.Address
+	fromAddr := common.HexToAddress(req.From)
+	var toAddr *common.Address
+	if req.To != "" {
+		to := common.HexToAddress(req.To)
+		toAddr = &to
+	}
 
+	// Parse ChainID from the request
+	if req.ChainID == "" {
+		http.Error(w, "ChainID is required", http.StatusBadRequest)
+		return
+	}
+	chainID, ok := new(big.Int).SetString(req.ChainID, 10)
+	if !ok {
+		http.Error(w, "Invalid ChainID", http.StatusBadRequest)
+		return
+	}
+
+	// Create the transaction object
 	var tx *types.Transaction
+	// EIP-1559
 	if req.GasFeeCap != nil && req.GasTipCap != nil {
-		// EIP-1559 Transaction
 		tx = types.NewTx(&types.DynamicFeeTx{
-			ChainID:   req.ChainID,
+			ChainID:   chainID,
 			Nonce:     req.Nonce,
-			GasTipCap: req.GasTipCap,
 			GasFeeCap: req.GasFeeCap,
+			GasTipCap: req.GasTipCap,
 			Gas:       req.GasLimit,
-			To:        &to,
+			To:        toAddr,
 			Value:     req.Value,
 			Data:      req.Data,
 		})
-	} else {
-		// Legacy Transaction
+	} else { // Legacy
 		tx = types.NewTx(&types.LegacyTx{
 			Nonce:    req.Nonce,
 			GasPrice: req.GasPrice,
 			Gas:      req.GasLimit,
-			To:       &to,
+			To:       toAddr,
 			Value:    req.Value,
 			Data:     req.Data,
 		})
 	}
 
-	signedTx, err := h.signer.SignTransaction(from, tx)
+	// Sign the transaction
+	signedTx, err := h.signer.SignTx(fromAddr, tx, chainID)
 	if err != nil {
 		http.Error(w, "Failed to sign transaction: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -82,4 +99,3 @@ func (h *SignTxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
-

@@ -9,11 +9,11 @@ import (
 
 // AccountsHandler handles requests for the list of accounts.
 type AccountsHandler struct {
-	km *signer.KeyManager
+	km signer.KeyManager
 }
 
 // NewAccountsHandler creates a new AccountsHandler.
-func NewAccountsHandler(km *signer.KeyManager) *AccountsHandler {
+func NewAccountsHandler(km signer.KeyManager) *AccountsHandler {
 	return &AccountsHandler{km: km}
 }
 
@@ -35,4 +35,3 @@ func (h *AccountsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode accounts", http.StatusInternalServerError)
 	}
 }
-

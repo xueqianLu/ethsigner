@@ -10,10 +10,10 @@ type SignTxRequest struct {
 	Value     *big.Int `json:"value"`
 	Data      []byte   `json:"data"`
 	GasLimit  uint64   `json:"gasLimit"`
-	GasPrice  *big.Int `json:"gasPrice,omitempty"` // Legacy
-	GasFeeCap *big.Int `json:"gasFeeCap,omitempty"`// EIP-1559
-	GasTipCap *big.Int `json:"gasTipCap,omitempty"`// EIP-1559
-	ChainID   *big.Int `json:"chainID"`
+	GasPrice  *big.Int `json:"gasPrice,omitempty"`  // Legacy
+	GasFeeCap *big.Int `json:"gasFeeCap,omitempty"` // EIP-1559
+	GasTipCap *big.Int `json:"gasTipCap,omitempty"` // EIP-1559
+	ChainID   string   `json:"chainId"`
 }
 
 // SignTxResponse represents the response for a signed transaction.
@@ -36,4 +36,3 @@ type SignMessageResponse struct {
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
-

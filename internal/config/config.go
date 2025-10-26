@@ -2,22 +2,38 @@ package config
 
 import (
 	"github.com/spf13/viper"
+	"log"
 )
 
 // Config holds the application configuration.
 type Config struct {
-	Server struct {
-		Port string `mapstructure:"port"`
-	} `mapstructure:"server"`
-	Auth struct {
-		APIKey    string `mapstructure:"api_key"`
-		APISecret string `mapstructure:"api_secret"`
-	} `mapstructure:"auth"`
-	Vault struct {
-		Addr        string `mapstructure:"addr"`
-		Token       string `mapstructure:"token"`
-		TransitPath string `mapstructure:"transit_path"`
-	} `mapstructure:"vault"`
+	Server     ServerConfig     `mapstructure:"server"`
+	KeyManager KeyManagerConfig `mapstructure:"key_manager"`
+}
+
+// KeyManagerConfig holds the configuration for the key manager.
+type KeyManagerConfig struct {
+	Type  string      `mapstructure:"type"` // "local" or "vault"
+	Local LocalConfig `mapstructure:"local"`
+	Vault VaultConfig `mapstructure:"vault"`
+}
+
+// LocalConfig holds the configuration for the local key manager.
+type LocalConfig struct {
+	KeyDir string `mapstructure:"key_dir"`
+}
+
+// ServerConfig holds the server configuration.
+type ServerConfig struct {
+	Port    string `mapstructure:"port"`
+	Address string `mapstructure:"address"`
+}
+
+// VaultConfig holds the Vault configuration.
+type VaultConfig struct {
+	Address     string `mapstructure:"address"`
+	Token       string `mapstructure:"token"`
+	TransitPath string `mapstructure:"transit_path"`
 }
 
 // LoadConfig reads configuration from file or environment variables.
@@ -41,5 +57,6 @@ func LoadConfig() (config Config, err error) {
 	}
 
 	err = viper.Unmarshal(&config)
+	log.Printf("Loaded config: %+v", config)
 	return
 }

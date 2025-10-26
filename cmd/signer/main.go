@@ -20,48 +20,54 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	// Create Vault client
-	vaultConfig := api.DefaultConfig()
-	if err := vaultConfig.ReadEnvironment(); err != nil {
-		log.Printf("Warning: could not read Vault environment variables: %v", err)
-	}
-	if cfg.Vault.Addr != "" {
-		vaultConfig.Address = cfg.Vault.Addr
-	}
-	vaultClient, err := api.NewClient(vaultConfig)
-	if err != nil {
-		log.Fatalf("Failed to create Vault client: %v", err)
-	}
-	if cfg.Vault.Token != "" {
-		vaultClient.SetToken(cfg.Vault.Token)
+	var keyManager signer.KeyManager
+	switch cfg.KeyManager.Type {
+	case "local":
+		keyManager, err = signer.NewLocalKeyManager(cfg.KeyManager.Local.KeyDir)
+		if err != nil {
+			log.Fatalf("Failed to initialize local key manager: %v", err)
+		}
+		log.Println("Using local key manager")
+	case "vault":
+		// Vault client configuration
+		vaultConfig := &api.Config{
+			Address: cfg.KeyManager.Vault.Address,
+		}
+		vaultClient, err := api.NewClient(vaultConfig)
+		if err != nil {
+			log.Fatalf("Failed to create Vault client: %v", err)
+		}
+		vaultClient.SetToken(cfg.KeyManager.Vault.Token)
+
+		keyManager, err = signer.NewVaultKeyManager(vaultClient, cfg.KeyManager.Vault.TransitPath)
+		if err != nil {
+			log.Fatalf("Failed to initialize Vault key manager: %v", err)
+		}
+		log.Println("Using Vault key manager")
+	default:
+		log.Fatalf("Invalid key manager type specified: %s", cfg.KeyManager.Type)
 	}
 
-	// Initialize components
-	keyManager, err := signer.NewKeyManager(vaultClient, cfg.Vault.TransitPath)
-	if err != nil {
-		log.Fatalf("Failed to create KeyManager: %v", err)
-	}
-
+	// Create a new signer instance
 	ethSigner := signer.NewSigner(keyManager)
-	authMiddleware := middleware.NewAuthMiddleware(cfg.Auth.APIKey, cfg.Auth.APISecret)
 
-	// Setup handlers
-	healthHandler := handler.NewHealthHandler()
-	accountsHandler := handler.NewAccountsHandler(keyManager)
-	createAccountHandler := handler.NewCreateAccountHandler(keyManager)
-	signTxHandler := handler.NewSignTxHandler(ethSigner)
-	signMessageHandler := handler.NewSignMessageHandler(ethSigner)
-
-	// Setup routes
+	// Register handlers
 	mux := http.NewServeMux()
-	mux.Handle("/health", healthHandler)
-	mux.Handle("/accounts", authMiddleware.Wrap(accountsHandler))
-	mux.Handle("/create-account", authMiddleware.Wrap(createAccountHandler))
-	mux.Handle("/sign-transaction", authMiddleware.Wrap(signTxHandler))
-	mux.Handle("/sign-message", authMiddleware.Wrap(signMessageHandler))
+	mux.Handle("/accounts", handler.NewAccountsHandler(ethSigner))
+	mux.Handle("/create-account", handler.NewCreateAccountHandler(ethSigner))
+	mux.Handle("/sign-transaction", handler.NewSignTxHandler(ethSigner))
+	mux.Handle("/sign-message", handler.NewSignMessageHandler(ethSigner))
+	mux.Handle("/health", handler.NewHealthHandler())
 
-	// Start server
-	srv := server.NewServer(mux, cfg.Server.Port)
+	// Apply middleware
+	var finalHandler http.Handler = mux
+	finalHandler = middleware.Logging(finalHandler)
+
+	// Create a new server
+	srv := server.NewServer(finalHandler, cfg.Server.Port)
+
+	// Start the server
+	log.Printf("Server starting on port %s", cfg.Server.Port)
 	fmt.Printf("Server listening on port %s\n", cfg.Server.Port)
 	log.Fatal(srv.ListenAndServe())
 }

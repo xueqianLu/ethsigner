@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	baseURL   = "http://localhost:8080"
+	baseURL   = "http://localhost:2818"
 	apiKey    = "test-api-key"
 	apiSecret = "test-api-secret"
 )
@@ -56,7 +56,7 @@ func main() {
 		Data:     []byte{},
 		GasLimit: 21000,
 		GasPrice: big.NewInt(20000000000), // 20 Gwei
-		ChainID:  big.NewInt(1337),       // Local testnet chain ID
+		ChainID:  "1337",                  // Local testnet chain ID
 	}
 	signedLegacyTx, err := c.SignTransaction(legacyTxReq)
 	if err != nil {
@@ -75,7 +75,7 @@ func main() {
 		GasLimit:  23000,
 		GasFeeCap: big.NewInt(30000000000), // 30 Gwei
 		GasTipCap: big.NewInt(20000000000), // 2 Gwei
-		ChainID:   big.NewInt(1337),
+		ChainID:   "1337",
 	}
 	signedEIP1559Tx, err := c.SignTransaction(eip1559TxReq)
 	if err != nil {

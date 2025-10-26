@@ -14,11 +14,11 @@ type CreateAccountResponse struct {
 
 // CreateAccountHandler handles requests to create a new account.
 type CreateAccountHandler struct {
-	km *signer.KeyManager
+	km signer.KeyManager
 }
 
 // NewCreateAccountHandler creates a new CreateAccountHandler.
-func NewCreateAccountHandler(km *signer.KeyManager) *CreateAccountHandler {
+func NewCreateAccountHandler(km signer.KeyManager) *CreateAccountHandler {
 	return &CreateAccountHandler{km: km}
 }
 
@@ -45,4 +45,3 @@ func (h *CreateAccountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
-
