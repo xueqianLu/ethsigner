@@ -1,0 +1,15 @@
+# config.example.yaml
+
+server:
+  port: "8080"
+
+auth:
+  api_key: "test-api-key"
+  api_secret: "test-api-secret"
+
+# Configuration for HashiCorp Vault
+vault:
+  addr: "http://127.0.0.1:8200"
+  token: "root" # For development only. Use a more secure method in production.
+  # The mount path for the transit secrets engine
+  transit_path: "transit"

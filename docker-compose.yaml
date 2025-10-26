@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: vault
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: "root"
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./data/vault/file:/vault/file
+    command: server -dev
+    networks:
+      - ethsigner-net
+
+  signer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: signer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - vault
+    volumes:
+      # Mount the config file into the container.
+      # The service will use this file for its configuration.
+      - ./config.yaml:/app/config.yaml:ro
+    environment:
+      # Override the Vault address in the config file.
+      # Inside the Docker network, the 'signer' service can reach the 'vault'
+      # service by using its service name 'vault' as the hostname.
+      VAULT_ADDR: "http://vault:8200"
+    networks:
+      - ethsigner-net
+
+networks:
+  ethsigner-net:
+    driver: bridge
