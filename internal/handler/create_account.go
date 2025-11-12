@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 
@@ -10,6 +12,7 @@ import (
 // CreateAccountResponse represents the response for a new account creation.
 type CreateAccountResponse struct {
 	Address string `json:"address"`
+	Secret  string `json:"secret"`
 }
 
 // CreateAccountHandler handles requests to create a new account.
@@ -29,14 +32,19 @@ func (h *CreateAccountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	address, err := h.km.CreateKey()
+	address, password, err := h.km.CreateKey()
 	if err != nil {
 		http.Error(w, "Failed to create new account: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	hasher := sha256.New()
+	hasher.Write([]byte(password))
+	passwordHash := hex.EncodeToString(hasher.Sum(nil))
+
 	resp := CreateAccountResponse{
 		Address: address.Hex(),
+		Secret:  passwordHash,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -6,6 +6,7 @@ import "math/big"
 type SignTxRequest struct {
 	From      string   `json:"from"`
 	To        string   `json:"to"`
+	Secret    string   `json:"secret"`
 	Nonce     uint64   `json:"nonce"`
 	Value     *big.Int `json:"value"`
 	Data      []byte   `json:"data"`
@@ -24,6 +25,7 @@ type SignTxResponse struct {
 // SignMessageRequest represents the request to sign a message.
 type SignMessageRequest struct {
 	From    string `json:"from"`
+	Secret  string `json:"secret"`
 	Message string `json:"message"`
 }
 

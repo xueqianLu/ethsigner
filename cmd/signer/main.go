@@ -23,7 +23,7 @@ func main() {
 	var keyManager signer.KeyManager
 	switch cfg.KeyManager.Type {
 	case "local":
-		keyManager, err = signer.NewLocalKeyManager(cfg.KeyManager.Local.KeyDir, cfg.KeyManager.Local.Password)
+		keyManager, err = signer.NewLocalKeyManager(cfg.KeyManager.Local.KeyDir)
 		if err != nil {
 			log.Fatalf("Failed to initialize local key manager: %v", err)
 		}

@@ -101,7 +101,7 @@ func (km *VaultKeyManager) loadExistingKeys() error {
 }
 
 // CreateKey creates a new key in Vault and returns its Ethereum address.
-func (km *VaultKeyManager) CreateKey() (common.Address, error) {
+func (km *VaultKeyManager) CreateKey() (common.Address, string, error) {
 	id, _ := rand.CryptoRandInt63n(2 ^ 63)
 	keyName := fmt.Sprintf("eth-key-%d", id)
 
@@ -110,7 +110,7 @@ func (km *VaultKeyManager) CreateKey() (common.Address, error) {
 		"type": "secp256k1",
 	})
 	if err != nil {
-		return common.Address{}, fmt.Errorf("failed to create key in vault: %w", err)
+		return common.Address{}, "", fmt.Errorf("failed to create key in vault: %w", err)
 	}
 
 	address, err := km.getAddressForKey(keyName)
@@ -120,7 +120,7 @@ func (km *VaultKeyManager) CreateKey() (common.Address, error) {
 		if delErr == nil {
 			km.vaultClient.Logical().Delete(path)
 		}
-		return common.Address{}, fmt.Errorf("failed to get address for new key: %w", err)
+		return common.Address{}, "", fmt.Errorf("failed to get address for new key: %w", err)
 	}
 
 	km.mu.Lock()
@@ -128,7 +128,7 @@ func (km *VaultKeyManager) CreateKey() (common.Address, error) {
 	km.addressToKey[address] = keyName
 
 	log.Printf("Successfully created key '%s' for address %s", keyName, address.Hex())
-	return address, nil
+	return address, "", nil
 }
 
 // GetAccounts returns all managed account addresses.
@@ -235,7 +235,7 @@ func (km *VaultKeyManager) signWithVault(keyName string, dataToSign []byte) ([]b
 }
 
 // SignTx signs a transaction using a key stored in Vault.
-func (km *VaultKeyManager) SignTx(address common.Address, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
+func (km *VaultKeyManager) SignTx(address common.Address, password string, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
 	keyName, err := km.getKeyName(address)
 	if err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ func (km *VaultKeyManager) SignTx(address common.Address, tx *types.Transaction,
 }
 
 // SignMessage signs a message using a key stored in Vault.
-func (km *VaultKeyManager) SignMessage(address common.Address, message []byte) ([]byte, error) {
+func (km *VaultKeyManager) SignMessage(address common.Address, password string, message []byte) ([]byte, error) {
 	keyName, err := km.getKeyName(address)
 	if err != nil {
 		return nil, err

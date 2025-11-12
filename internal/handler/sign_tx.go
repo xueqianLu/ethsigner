@@ -33,6 +33,11 @@ func (h *SignTxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Secret == "" {
+		http.Error(w, "Password is required", http.StatusBadRequest)
+		return
+	}
+
 	// Convert address strings to common.Address
 	fromAddr := common.HexToAddress(req.From)
 	var toAddr *common.Address
@@ -78,7 +83,7 @@ func (h *SignTxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Sign the transaction
-	signedTx, err := h.signer.SignTx(fromAddr, tx, chainID)
+	signedTx, err := h.signer.SignTx(fromAddr, req.Secret, tx, chainID)
 	if err != nil {
 		http.Error(w, "Failed to sign transaction: "+err.Error(), http.StatusInternalServerError)
 		return

@@ -33,10 +33,15 @@ func (h *SignMessageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	if req.Secret == "" {
+		http.Error(w, "Password is required", http.StatusBadRequest)
+		return
+	}
+
 	from := common.HexToAddress(req.From)
 	message := []byte(req.Message)
 
-	signature, err := h.signer.SignMessage(from, message)
+	signature, err := h.signer.SignMessage(from, req.Secret, message)
 	if err != nil {
 		http.Error(w, "Failed to sign message: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -51,4 +56,3 @@ func (h *SignMessageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
-
